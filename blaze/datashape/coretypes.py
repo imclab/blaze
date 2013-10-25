@@ -10,6 +10,7 @@ import sys
 import ctypes
 import operator
 import datetime
+from functools import partial
 
 import blaze
 from ..py2help import _inttypes, _strtypes, unicode
@@ -92,6 +93,10 @@ class Mono(object):
     def measure(self):
         return self
 
+    @property
+    def params(self):
+        return self.parameters
+
     def subarray(self, leading):
         """Returns a data shape object of the subarray with 'leading'
         dimensions removed. In the case of a measure such as CType,
@@ -102,6 +107,11 @@ class Mono(object):
                             'to remove %d leading dimensions.') % leading)
         else:
             return self
+
+    @classmethod
+    def fromparams(cls, *params):
+        """Construct a type parameterized type"""
+        return cls(*params)
 
 class Unit(Mono):
     """
@@ -838,12 +848,22 @@ class TypeConstructor(type):
     """
 
     def __new__(cls, name, n, flags):
-        def __init__(self, *params):
+        def __new__(cls, name, *params):
+            if isinstance(name, TypeVar) or name == var:
+                return super(tcon, cls).__new__(cls, name, *params)
+            else:
+                # Construction of a type constructor with a replaced type
+                # variable, e.g. a[b] -> c[b]
+                assert isinstance(type(name), TypeConstructor), name
+                return name(name, *params)
+
+        def __init__(self, name, *params):
             if len(params) != n:
                 raise TypeError(
                     "Expected %d parameters for constructor %s, got %d" % (
                         n, name, len(params)))
-            self.parameters = params
+            if isinstance(name, TypeVar):
+                self.parameters = (name,) + params
 
         def __eq__(self, other):
             return (isinstance(other, type(self)) and
@@ -854,24 +874,36 @@ class TypeConstructor(type):
             return hash((name, n, self.parameters))
 
         def __str__(self):
-            return "%s[%s]" % (name, ", ".join(map(str, self.parameters)))
+            return "%s[%s]" % (name, ", ".join(map(str, self.params)))
 
-        d = {
+        @classmethod
+        def fromparams(cls, *params):
+            return cls(cls.var, *params)
+
+        # Allow the type constructor variable to vary, e.g. a[b]
+        # with `a` variable
+        var = TypeVar(name)
+
+        dct = {
+            '__new__': __new__,
             '__init__': __init__,
             '__repr__': __str__,
             '__str__': __str__,
             '__eq__': __eq__,
             '__ne__': lambda self, other: not (self == other),
             '__hash__': __hash__,
+            'params': property(lambda self: self.parameters[1:]),
+            'fromparams': fromparams,
             'flags': flags,
+            'var': var,
         }
-        self = super(TypeConstructor, cls).__new__(cls, name, (Mono,), d)
+        tcon = super(TypeConstructor, cls).__new__(cls, name, (Mono,), dct)
 
-        self.name = name
-        self.n = n
-        self.flags = flags
-        return self
+        tcon.name = name
+        tcon.n = n
+        tcon.flags = flags
 
+        return tcon
 
     def __eq__(cls, other):
         return (isinstance(other, TypeConstructor) and

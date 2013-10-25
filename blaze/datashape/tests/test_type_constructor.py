@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import print_function, division, absolute_import
+from functools import partial
 
 import unittest
 
@@ -12,11 +13,14 @@ from blaze.datashape import unify_simple, promote, coercion_cost, dshape, corety
 #------------------------------------------------------------------------
 
 Complex = T.TypeConstructor('Complex', 1, [{'coercible': True}])
+Complex = Complex.fromparams
+
 t1 = Complex(T.int64)
 t2 = Complex(T.int64)
 t3 = Complex(T.int32)
 
 RigidComplex = T.TypeConstructor('Complex', 1, [{'coercible': False}])
+RigidComplex = RigidComplex.fromparams
 rt1 = RigidComplex(T.int64)
 rt2 = RigidComplex(T.int64)
 rt3 = RigidComplex(T.int32)
@@ -52,20 +56,20 @@ class TestTypeConstructors(common.BTestCase):
         cls = type(t)
 
         self.assertIsInstance(cls, T.TypeConstructor)
-        self.assertEqual(str(cls(32)), 'Int[32]')
-        self.assertIsInstance(cls(32), cls)
+        self.assertEqual(str(cls.fromparams(32)), 'Int[32]')
+        self.assertIsInstance(cls.fromparams(32), cls)
 
         flags0 = t.flags[0]
         self.assertEqual(flags0, {'coercible': False})
 
     def test_parsing2(self):
         t = dshape('Int[32]')
-        self.assertEqual(len(t.parameters), 1)
-        self.assertIsInstance(t.parameters[0], T.Fixed)
+        self.assertEqual(t.parameters[-1], 32)
+        self.assertIsInstance(t.parameters[-1], T.Fixed)
 
         t = dshape('Int[Float[32] -> Complex[64]]')
-        self.assertEqual(len(t.parameters), 1)
-        self.assertIsInstance(t.parameters[0], T.Function)
+        #self.assertEqual(len(t.parameters), 1)
+        self.assertIsInstance(t.parameters[-1], T.Function)
 
 
 class TestErrors(unittest.TestCase):

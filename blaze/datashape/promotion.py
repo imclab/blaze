@@ -135,7 +135,7 @@ def promote_type_constructor(a, b):
 
     # Promote parameters according to flags
     args = []
-    for flag, t1, t2 in zip(a.flags, a.parameters, b.parameters):
+    for flag, t1, t2 in zip(a.flags, a.params, b.params):
         if flag['coercible']:
             result = promote(t1, t2)
         else:
@@ -147,4 +147,4 @@ def promote_type_constructor(a, b):
 
         args.append(result)
 
-    return type(a)(*args)
+    return type(a)(a.var, *args)
