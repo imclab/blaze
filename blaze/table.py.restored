@@ -1,3 +1,6 @@
+# NOTE: This is a restored version of the previous table object
+#       for reference writing a Table object in table.py.
+
 """
 The toplevel modules containing the core Blaze datastructures.
 
