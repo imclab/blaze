@@ -61,6 +61,10 @@ class Array(object):
         return self._data.dshape
 
     @property
+    def ndim(self):
+        return len(self.dshape.parameters) - 1
+
+    @property
     def deferred(self):
         return self._data.deferred
 

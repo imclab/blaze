@@ -29,8 +29,18 @@ def interpret(func, env, args, persist=False, **kwds):
 
     dshape = func.type.restype
     descs = [arg._data for arg in args]
-    inputs = [desc.query for desc in descs]
-    conns = [desc.conn for desc in descs]
+
+    inputs = []
+    conns = []
+    for desc in descs:
+        if isinstance(desc, SciDBDataDesc):
+            inputs.append(desc.query)
+            conns.append(desc.conn)
+        else:
+            assert len(desc.dshape.parameters) == 1 # 0D array
+            arr = desc.dynd_arr()
+            scalar = arr[()]
+            inputs.append(scalar)
 
     if len(set(conns)) > 1:
         raise InterfaceError(
@@ -81,7 +91,7 @@ def op_kernel(interp, funcname, *args):
 
     kernel = impl_overload.func
     sig    = impl_overload.resolved_sig
-    assert sig == signature, (sig, signature)
+    #assert sig == signature, (sig, signature)
 
     return kernel(*args)
 

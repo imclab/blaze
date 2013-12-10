@@ -43,6 +43,7 @@ class Query(object):
         self.kwds = kwds
         self.interpolate = interpolate
         self.uses = []
+        self.stmts = []
 
         for arg in chain(self.args, self.kwds.values()):
             if isinstance(arg, Query):
@@ -67,6 +68,7 @@ class Query(object):
             if isinstance(arg, Query):
                 arg.generate_code(code, cleanup, seen)
 
+        code.extend(self.stmts)
         if len(self.uses) > 1:
             self.temp_name = temp_name()
             code.append("store({expr}, {temp})".format(expr=self._result(),

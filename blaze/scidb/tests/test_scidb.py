@@ -4,7 +4,7 @@ from __future__ import print_function, division, absolute_import
 import unittest
 
 from blaze import dshape, add, mul, eval
-from blaze.scidb import connect, empty, zeros, ones
+from blaze.scidb import connect, empty, zeros, ones, linalg
 from blaze.scidb.tests.mock import MockedConn
 
 from scidbpy import interface, SciDBQueryError, SciDBArray
@@ -52,8 +52,17 @@ class TestSciDB(unittest.TestCase):
         result = eval(expr)
         print(result)
 
+    def test_svd(self):
+        print("establishing connection...")
+        conn = interface.SciDBShimInterface('http://192.168.56.101:8080/')
+        print(conn)
+
+        a = zeros(ds, conn)
+        b = ones(ds, conn)
+
+        print(linalg.svd(a + b))
 
 
 if __name__ == '__main__':
     #unittest.main()
-    TestSciDB('test_query_exec').debug()
+    TestSciDB('test_svd').debug()

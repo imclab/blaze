@@ -66,9 +66,9 @@ class SciDBDataDesc(IDataDescriptor):
     def __repr__(self):
         return "SciDBDesc(%s)" % (str(self.query),)
 
-    def __str__(self):
+    __str__ = __repr__
+
+    def _printer(self):
         arrname = str(self.query)
         sdb_array = self.conn.wrap_array(arrname)
         return str(sdb_array.toarray())
-
-    _printer = __str__
